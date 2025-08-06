@@ -11,12 +11,24 @@ export default function SignUpPkk() {
   const [desaAsal, setDesaAsal] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agree, setAgree] = useState(false);
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
 
   async function signUp() {
+    if (!agree) {
+      Alert.alert('Peringatan', 'Anda harus menyetujui syarat dan ketentuan.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Peringatan', 'Kata sandi dan konfirmasi tidak sama.');
+      return;
+    }
+
     setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({ email, password });
@@ -29,7 +41,7 @@ export default function SignUpPkk() {
 
     const user = data.user;
     if (user) {
-      const { error: insertError } = await supabase.from('users').upsert([
+      const { error: insertError } = await supabase.from('profiles').upsert([
         {
           id: user.id,
           full_name: fullName,
@@ -51,22 +63,51 @@ export default function SignUpPkk() {
   }
 
   return (
-    <View className="justify-center flex-1 px-6 bg-white">
-      <Text className="mb-6 text-2xl font-bold text-center">Daftar - Anggota PKK</Text>
+    <View className="flex-1 px-6 pt-16 bg-white">
+      <Text className="mb-10 text-3xl font-bold text-center text-pink-700">Ayo Daftar Sekarang</Text>
 
-      <TextInput className="px-4 py-2 mb-4 border border-gray-300 rounded-md" placeholder="Nama Lengkap" value={fullName} onChangeText={setFullName} />
-      <TextInput className="px-4 py-2 mb-4 border border-gray-300 rounded-md" placeholder="Desa Asal PKK" value={desaAsal} onChangeText={setDesaAsal} />
-      <TextInput className="px-4 py-2 mb-4 border border-gray-300 rounded-md" placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+      <Text className="mb-2 text-base font-semibold text-pink-800">Nama Lengkap</Text>
+      <View className="flex-row items-center px-4 mb-4 bg-pink-100 rounded-full h-14">
+        <Ionicons name="person-outline" size={24} color="gray" />
+        <TextInput className="flex-1 ml-3 text-base text-black" placeholder="Nama Lengkap" placeholderTextColor="#999" value={fullName} onChangeText={setFullName} />
+      </View>
 
-      <View className="flex-row items-center px-4 py-2 mb-6 border border-gray-300 rounded-md">
-        <TextInput className="flex-1" placeholder="Password" secureTextEntry={!showPassword} autoCapitalize="none" value={password} onChangeText={setPassword} />
+      <Text className="mb-2 text-base font-semibold text-pink-800">Desa Asal</Text>
+      <View className="flex-row items-center px-4 mb-4 bg-pink-100 rounded-full h-14">
+        <Ionicons name="home-outline" size={24} color="gray" />
+        <TextInput className="flex-1 ml-3 text-base text-black" placeholder="Desa Asal" placeholderTextColor="#999" value={desaAsal} onChangeText={setDesaAsal} />
+      </View>
+
+      <Text className="mb-2 text-base font-semibold text-pink-800">Email</Text>
+      <View className="flex-row items-center px-4 mb-4 bg-pink-100 rounded-full h-14">
+        <Ionicons name="mail-outline" size={24} color="gray" />
+        <TextInput className="flex-1 ml-3 text-base text-black" placeholder="Email" placeholderTextColor="#999" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+      </View>
+
+      <Text className="mb-2 text-base font-semibold text-pink-800">Kata Sandi</Text>
+      <View className="flex-row items-center px-4 mb-4 bg-pink-100 rounded-full h-14">
+        <Ionicons name="lock-closed-outline" size={24} color="gray" />
+        <TextInput className="flex-1 ml-3 text-base text-black" placeholder="Password" placeholderTextColor="#999" secureTextEntry={!showPassword} autoCapitalize="none" value={password} onChangeText={setPassword} />
         <Pressable onPress={toggleShowPassword}>
           <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="gray" />
         </Pressable>
       </View>
 
-      <TouchableOpacity className="p-3 bg-green-600 rounded-md" disabled={loading} onPress={signUp}>
-        <Text className="font-semibold text-center text-white">{loading ? 'Loading...' : 'Daftar'}</Text>
+      <Text className="mb-2 text-base font-semibold text-pink-800">Konfirmasi Kata Sandi</Text>
+      <View className="flex-row items-center px-4 mb-6 bg-pink-100 rounded-full h-14">
+        <Ionicons name="lock-closed-outline" size={24} color="gray" />
+        <TextInput className="flex-1 ml-3 text-base text-black" placeholder="Konfirmasi Password" placeholderTextColor="#999" secureTextEntry={!showPassword} autoCapitalize="none" value={confirmPassword} onChangeText={setConfirmPassword} />
+      </View>
+
+      <View className="flex-row items-start gap-3 mb-6">
+        <Pressable onPress={() => setAgree(!agree)}>
+          <View className="items-center justify-center w-6 h-6 border-2 border-pink-500 rounded-full">{agree && <Ionicons name="checkmark" size={16} color="pink" />}</View>
+        </Pressable>
+        <Text className="flex-1 text-sm leading-relaxed text-black">Dengan ini saya menyatakan setuju terhadap seluruh syarat, ketentuan, dan kebijakan yang ditetapkan oleh aplikasi.</Text>
+      </View>
+
+      <TouchableOpacity className={`py-4 rounded-full ${agree ? 'bg-pink-600' : 'bg-pink-300'}`} disabled={!agree || loading} onPress={signUp}>
+        <Text className="text-lg font-bold text-center text-white">{loading ? 'Loading...' : 'Daftar Sekarang'}</Text>
       </TouchableOpacity>
     </View>
   );

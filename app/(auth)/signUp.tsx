@@ -1,3 +1,136 @@
+// import React, { useState } from 'react';
+// import {
+//   Alert,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   View,
+//   Pressable,
+// } from 'react-native';
+// import { useRouter } from 'expo-router';
+// import { Ionicons } from '@expo/vector-icons';
+// import { supabase } from '../../lib/supabase';
+
+// export default function SignUp() {
+//   const router = useRouter();
+
+//   const [email, setEmail] = useState('');
+//   const [password, setPassword] = useState('');
+//   const [fullName, setFullName] = useState('');
+//   const [username, setUsername] = useState('');
+//   const [showPassword, setShowPassword] = useState(false);
+//   const [loading, setLoading] = useState(false);
+
+//   const toggleShowPassword = () => setShowPassword(!showPassword);
+
+//   async function signUpWithEmail() {
+//     if (username.length < 3) {
+//       Alert.alert('Error', 'Username must be at least 3 characters');
+//       return;
+//     }
+
+//     setLoading(true);
+
+//     const { data, error } = await supabase.auth.signUp({
+//       email,
+//       password,
+//     });
+
+//     if (error) {
+//       Alert.alert('Sign Up Error', error.message);
+//       setLoading(false);
+//       return;
+//     }
+
+//     // ✅ Insert data ke table `profiles`
+//     const user = data.user;
+//     if (user) {
+//       const { error: insertError } = await supabase.from('profiles').upsert([
+//         {
+//           id: user.id,
+//           username,
+//           full_name: fullName,
+//           avatar_url: '', // default kosong
+//         },
+//       ]);
+
+//       if (insertError) {
+//         Alert.alert('Profile Error', insertError.message);
+//         setLoading(false);
+//         return;
+//       }
+//     }
+
+//     setLoading(false);
+//     Alert.alert('Success', 'Check your email to confirm your account!');
+//     router.replace('/'); // Arahkan ke home page
+//   }
+
+//   return (
+//     <View className="justify-center flex-1 px-6 bg-white">
+//       <Text className="mb-6 text-2xl font-bold text-center">Sign Up</Text>
+
+//       <TextInput
+//         className="px-4 py-2 mb-4 border border-gray-300 rounded-md"
+//         placeholder="Full Name"
+//         value={fullName}
+//         onChangeText={setFullName}
+//       />
+//       <TextInput
+//         className="px-4 py-2 mb-4 border border-gray-300 rounded-md"
+//         placeholder="Username"
+//         autoCapitalize="none"
+//         value={username}
+//         onChangeText={setUsername}
+//       />
+//       <TextInput
+//         className="px-4 py-2 mb-4 border border-gray-300 rounded-md"
+//         placeholder="Email"
+//         keyboardType="email-address"
+//         autoCapitalize="none"
+//         value={email}
+//         onChangeText={setEmail}
+//       />
+
+//       <View className="flex-row items-center px-4 py-2 mb-6 border border-gray-300 rounded-md">
+//         <TextInput
+//           className="flex-1"
+//           placeholder="Password"
+//           secureTextEntry={!showPassword}
+//           autoCapitalize="none"
+//           value={password}
+//           onChangeText={setPassword}
+//         />
+//         <Pressable onPress={toggleShowPassword}>
+//           <Ionicons
+//             name={showPassword ? 'eye-off' : 'eye'}
+//             size={22}
+//             color="gray"
+//           />
+//         </Pressable>
+//       </View>
+
+//       <TouchableOpacity
+//         className="p-3 bg-green-600 rounded-md"
+//         disabled={loading}
+//         onPress={signUpWithEmail}
+//       >
+//         <Text className="font-semibold text-center text-white">
+//           {loading ? 'Loading...' : 'Sign Up'}
+//         </Text>
+//       </TouchableOpacity>
+
+//       <TouchableOpacity
+//         className="mt-4"
+//         onPress={() => router.push('/(auth)/signIn')}
+//       >
+//         <Text className="text-center text-blue-500">
+//           Already have an account? Sign In
+//         </Text>
+//       </TouchableOpacity>
+//     </View>
+//   );
+// }
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
