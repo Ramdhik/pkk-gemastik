@@ -1,11 +1,13 @@
-import { supabase } from '@/lib/supabase'; // Sesuaikan path jika beda
+import PostCard from '@/components/(postCard)/PostCard';
+import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
 export default function TabTwoScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [posts, setPosts] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -19,12 +21,9 @@ export default function TabTwoScreen() {
         return;
       }
 
-      // Ambil email langsung dari auth.users
       setEmail(user.email || '');
 
-      // Ambil full_name dari tabel profiles
       const { data, error } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
-
       if (error) {
         console.error('Error fetching full_name:', error);
       } else {
@@ -32,7 +31,49 @@ export default function TabTwoScreen() {
       }
     };
 
+    const fetchPosts = async () => {
+      const { data, error } = await supabase.from('posts').select('*');
+      if (error) {
+        console.error('Error fetching posts:', error);
+      } else {
+        const postsWithFullName = await Promise.all(
+          data.map(async (post) => {
+            const { data: profileData, error: profileError } = await supabase.from('profiles').select('full_name').eq('id', post.user_id).single();
+            if (profileError) {
+              console.error('Error fetching profile for user_id:', post.user_id, profileError);
+              return { ...post, full_name: 'Unknown User' };
+            }
+            return { ...post, full_name: profileData?.full_name || 'Unknown User' };
+          })
+        );
+        setPosts(postsWithFullName);
+      }
+    };
+
+    const channel = supabase
+      .channel('public:posts')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload) => {
+        const newPost = payload.new;
+        const fetchFullName = async () => {
+          const { data: profileData, error: profileError } = await supabase.from('profiles').select('full_name').eq('id', newPost.user_id).single();
+          if (profileError) {
+            console.error('Error fetching full_name for new post:', profileError);
+            return { ...newPost, full_name: 'Unknown User' };
+          }
+          return { ...newPost, full_name: profileData?.full_name || 'Unknown User' };
+        };
+        fetchFullName().then((postWithFullName) => {
+          setPosts((prevPosts) => [postWithFullName, ...prevPosts]);
+        });
+      })
+      .subscribe();
+
     fetchProfile();
+    fetchPosts();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const firstName = fullName?.split?.(' ')[0] || '';
@@ -49,7 +90,13 @@ export default function TabTwoScreen() {
         </Pressable>
       </View>
 
-      {/* Konten lainnya bisa kamu tambahkan di bawah sini */}
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <PostCard id={item.id} user_id={item.user_id} content={item.content} image={item.image} created_at={item.created_at} full_name={item.full_name} />}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }

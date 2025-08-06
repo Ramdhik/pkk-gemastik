@@ -1,4 +1,4 @@
-import { Dimensions, FlatList, ScrollView, Text, TextInput, View } from 'react-native';
+import { FlatList, ScrollView, Text, TextInput, View } from 'react-native';
 
 const categories = ['Lorem', 'Lorem', 'Lorem', 'Lorem'];
 const products = [
@@ -8,8 +8,8 @@ const products = [
   { id: '4', name: 'Lorem Ipsum', price: 15000 },
 ];
 
-const screenWidth = Dimensions.get('window').width;
-const itemWidth = (screenWidth - 24 * 2 - 16) / 2; // padding + gap
+// const screenWidth = Dimensions.get('window').width;
+// const itemWidth = (screenWidth - 24 * 2 - 16) / 2; // padding + gap
 
 export default function ExploreScreen() {
   return (
