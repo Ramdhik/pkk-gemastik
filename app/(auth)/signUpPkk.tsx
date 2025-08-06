@@ -59,7 +59,7 @@ export default function SignUpPkk() {
 
     setLoading(false);
     Alert.alert('Berhasil', 'Cek email untuk konfirmasi akun!');
-    router.replace('/');
+    router.replace('/(tabs)');
   }
 
   return (

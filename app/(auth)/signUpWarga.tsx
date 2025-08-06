@@ -70,7 +70,7 @@ export default function SignUpWarga() {
 
     setLoading(false);
     Alert.alert('Berhasil', 'Cek email untuk konfirmasi akun!');
-    router.replace('/');
+    router.replace('/(tabs)');
   }
 
   return (

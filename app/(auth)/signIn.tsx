@@ -34,7 +34,7 @@ export default function SignIn() {
       Alert.alert('Login Gagal', error.message);
     } else {
       Alert.alert('Sukses', 'Login berhasil!');
-      router.replace('/');
+      router.replace('/(tabs)');
     }
 
     setLoading(false);
