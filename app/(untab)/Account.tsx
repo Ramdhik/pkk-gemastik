@@ -18,7 +18,7 @@ export default function Account({ session }: { session: Session }) {
       setLoading(true);
       if (!session?.user) throw new Error('No user on the session!');
 
-      const { data, error, status } = await supabase.from('users').select(`username, website, avatar_url`).eq('id', session?.user.id).single();
+      const { data, error, status } = await supabase.from('profiles').select(`username, website, avatar_url`).eq('id', session?.user.id).single();
 
       if (error && status !== 406) throw error;
 
@@ -47,7 +47,7 @@ export default function Account({ session }: { session: Session }) {
         updated_at: new Date(),
       };
 
-      const { error } = await supabase.from('users').upsert(updates);
+      const { error } = await supabase.from('profiles').upsert(updates);
 
       if (error) throw error;
     } catch (error) {

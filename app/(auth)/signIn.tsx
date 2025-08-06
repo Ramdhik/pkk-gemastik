@@ -34,7 +34,7 @@ export default function SignIn() {
       Alert.alert('Login Gagal', error.message);
     } else {
       Alert.alert('Sukses', 'Login berhasil!');
-      router.replace('/'); // ✅ navigasi ke halaman utama
+      router.replace('/');
     }
 
     setLoading(false);
@@ -42,23 +42,27 @@ export default function SignIn() {
 
   return (
     <View className="justify-center flex-1 px-6 bg-white">
-      <Text className="mb-6 text-2xl font-bold text-center">Sign In</Text>
+      <Text className="text-center text-4xl font-extrabold text-[#4b0b26] mb-12">Selamat Datang</Text>
 
-      <TextInput className="px-4 py-2 mb-4 border border-gray-300 rounded-md" placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+      <Text className="mb-2 text-lg font-semibold text-[#4b0b26]">Email</Text>
+      <TextInput className="mb-5 rounded-full bg-pink-100 px-6 py-4 text-lg text-[#4b0b26]" placeholder="Ex: kamu@email.com" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
 
+      <Text className="mb-2 text-lg font-semibold text-[#4b0b26]">Password</Text>
       <View className="relative mb-6">
-        <TextInput className="px-4 py-2 pr-10 border border-gray-300 rounded-md" placeholder="Password" secureTextEntry={!showPassword} autoCapitalize="none" value={password} onChangeText={setPassword} />
-        <TouchableOpacity className="absolute right-3 top-3" onPress={() => setShowPassword(!showPassword)}>
-          <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="#999" />
+        <TextInput className="rounded-full bg-pink-100 px-6 py-4 pr-12 text-lg text-[#4b0b26]" placeholder="Masukkan Password" secureTextEntry={!showPassword} autoCapitalize="none" value={password} onChangeText={setPassword} />
+        <TouchableOpacity className="absolute right-5 top-4" onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={24} color="#4b0b26" />
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity className="p-3 bg-blue-600 rounded-md" disabled={loading} onPress={signInWithEmail}>
-        <Text className="font-semibold text-center text-white">{loading ? 'Loading...' : 'Sign In'}</Text>
+      <TouchableOpacity className="py-4 bg-pink-500 rounded-full" disabled={loading} onPress={signInWithEmail}>
+        <Text className="text-lg font-bold text-center text-white">{loading ? 'Loading...' : 'Masuk'}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity className="mt-4" onPress={() => router.push('/(auth)/signUp')}>
-        <Text className="text-center text-blue-500">Tidak punya akun? Daftar</Text>
+      <TouchableOpacity className="mt-6" onPress={() => router.push('/(auth)/signUp')}>
+        <Text className="text-base text-center text-gray-400">
+          Belum punya akun? <Text className="font-bold text-black">Daftar</Text>
+        </Text>
       </TouchableOpacity>
     </View>
   );
