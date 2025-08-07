@@ -34,6 +34,7 @@ function EventCard({
   isAttending?: boolean;
   onPress: (eventId: string, attend: boolean) => void;
 }) {
+  const router = useRouter();
   return (
     <View className="p-4 mb-4 bg-white shadow rounded-xl">
       <Text className="text-sm text-gray-400">{date}</Text>
@@ -56,7 +57,15 @@ function EventCard({
         </TouchableOpacity>
       </View>
 
-      <Text className="mt-2 text-xs text-gray-400">Lihat Selengkapnya</Text>
+      <TouchableOpacity
+        onPress={() => {
+          console.log('Navigating to event ID:', id);
+          // Ubah path ini sesuai struktur folder Anda
+          router.push(`../(untab)/eventDetails/${id}`);
+        }}
+      >
+        <Text className="mt-2 text-xs text-gray-400 underline">Lihat Selengkapnya</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -118,7 +127,7 @@ export default function ScheduleScreen() {
 
   const handleAttendance = async (eventId: string, isAttending: boolean) => {
     if (!userId) return;
-
+    console.log('Tombol Hadir diklik:', { eventId, isAttending });
     Alert.alert('Konfirmasi Kehadiran', 'Apakah kamu yakin ingin hadir dalam acara ini?', [
       {
         text: 'Batal',
