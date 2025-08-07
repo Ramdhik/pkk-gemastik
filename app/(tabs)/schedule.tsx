@@ -1,12 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 interface Event {
   id: string;
   title: string;
   event_date: string;
+  place: string | null;
 }
 
 interface AttendanceMap {
@@ -16,36 +17,41 @@ interface AttendanceMap {
   };
 }
 
-function EventCard({ id, date, title, isAnswered, isAttending, onPress }: { id: string; date: string; title: string; isAnswered: boolean; isAttending?: boolean; onPress: (eventId: string, attend: boolean) => void }) {
+function EventCard({
+  id,
+  date,
+  title,
+  place,
+  isAnswered,
+  isAttending,
+  onPress,
+}: {
+  id: string;
+  date: string;
+  title: string;
+  place: string | null;
+  isAnswered: boolean;
+  isAttending?: boolean;
+  onPress: (eventId: string, attend: boolean) => void;
+}) {
   return (
     <View className="p-4 mb-4 bg-white shadow rounded-xl">
       <Text className="text-sm text-gray-400">{date}</Text>
-      <Text className="mb-4 text-lg font-semibold">{title}</Text>
+      <Text className="mb-1 text-lg font-semibold">{title}</Text>
+      {place && <Text className="mb-3 text-sm text-gray-600">{place}</Text>}
 
       <View className="flex-row space-x-2">
         <TouchableOpacity
+          disabled={isAnswered}
           onPress={() => onPress(id, true)}
           className={`flex-1 py-2 rounded-full items-center 
-            ${isAnswered ? (isAttending ? 'bg-pink-500' : 'bg-pink-200') : 'bg-gray-200'}`}
+            ${isAnswered ? 'bg-pink-500' : 'bg-gray-200'}`}
         >
           <Text
             className={`font-semibold 
-              ${isAnswered ? (isAttending ? 'text-white' : 'text-pink-600') : 'text-gray-400'}`}
+              ${isAnswered ? 'text-white' : 'text-gray-400'}`}
           >
-            Hadir
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => onPress(id, false)}
-          className={`flex-1 py-2 rounded-full items-center 
-            ${isAnswered ? (!isAttending ? 'bg-pink-500' : 'bg-pink-200') : 'bg-gray-200'}`}
-        >
-          <Text
-            className={`font-semibold 
-              ${isAnswered ? (!isAttending ? 'text-white' : 'text-pink-600') : 'text-gray-400'}`}
-          >
-            Tidak
+            {isAnswered ? 'Sudah Hadir' : 'Hadir'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -70,7 +76,7 @@ export default function ScheduleScreen() {
 
       setUserId(user.id);
 
-      const { data: eventsData } = await supabase.from('events').select('id, title, event_date').order('event_date', { ascending: true });
+      const { data: eventsData } = await supabase.from('events').select('id, title, event_date, place').order('event_date', { ascending: true });
 
       setEvents(eventsData || []);
 
@@ -89,7 +95,6 @@ export default function ScheduleScreen() {
 
     fetchData();
 
-    // ✅ Real-time insert listener
     const channel = supabase
       .channel('realtime-events')
       .on(
@@ -106,7 +111,6 @@ export default function ScheduleScreen() {
       )
       .subscribe();
 
-    // Cleanup
     return () => {
       supabase.removeChannel(channel);
     };
@@ -115,25 +119,36 @@ export default function ScheduleScreen() {
   const handleAttendance = async (eventId: string, isAttending: boolean) => {
     if (!userId) return;
 
-    const existing = await supabase.from('event_attendance').select('*').eq('event_id', eventId).eq('user_id', userId).maybeSingle();
-
-    if (existing.data) {
-      await supabase.from('event_attendance').update({ is_attending: isAttending }).eq('id', existing.data.id);
-    } else {
-      await supabase.from('event_attendance').insert({
-        event_id: eventId,
-        user_id: userId,
-        is_attending: isAttending,
-      });
-    }
-
-    setAttendance((prev) => ({
-      ...prev,
-      [eventId]: {
-        isAnswered: true,
-        isAttending,
+    Alert.alert('Konfirmasi Kehadiran', 'Apakah kamu yakin ingin hadir dalam acara ini?', [
+      {
+        text: 'Batal',
+        style: 'cancel',
       },
-    }));
+      {
+        text: 'Ya, Saya Hadir',
+        onPress: async () => {
+          const existing = await supabase.from('event_attendance').select('*').eq('event_id', eventId).eq('user_id', userId).maybeSingle();
+
+          if (existing.data) {
+            await supabase.from('event_attendance').update({ is_attending: isAttending }).eq('id', existing.data.id);
+          } else {
+            await supabase.from('event_attendance').insert({
+              event_id: eventId,
+              user_id: userId,
+              is_attending: isAttending,
+            });
+          }
+
+          setAttendance((prev) => ({
+            ...prev,
+            [eventId]: {
+              isAnswered: true,
+              isAttending,
+            },
+          }));
+        },
+      },
+    ]);
   };
 
   return (
@@ -158,6 +173,7 @@ export default function ScheduleScreen() {
               year: 'numeric',
             })}
             title={event.title}
+            place={event.place}
             isAnswered={attendance[event.id]?.isAnswered ?? false}
             isAttending={attendance[event.id]?.isAttending}
             onPress={handleAttendance}

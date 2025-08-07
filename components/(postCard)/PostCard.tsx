@@ -1,8 +1,8 @@
-// PostCard.tsx
+import { supabase } from '@/lib/supabase'; // pastikan path ini sesuai
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Image, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
-import ProfileHeader from './ProfileHeader'; // Sesuaikan path impor
+import React, { useEffect, useState } from 'react';
+import { Image, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ProfileHeader from './ProfileHeader';
 
 interface PostCardProps {
   id: string;
@@ -10,28 +10,57 @@ interface PostCardProps {
   content: string;
   image: string;
   created_at: string;
-  full_name: string; // Tambahkan properti full_name
+  full_name: string;
+  avatar_url: string;
 }
 
-const PostCard = ({ id, user_id, content, image, created_at, full_name }: PostCardProps) => {
+const PostCard = ({ id, user_id, content, image, created_at, full_name, avatar_url }: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
+  const [comment, setComment] = useState('');
+  const [comments, setComments] = useState<any[]>([]);
 
-  const MAX_CONTENT_LENGTH = 100; // Adjust as needed
+  const MAX_CONTENT_LENGTH = 100;
   const shouldShowSeeMore = content.length > MAX_CONTENT_LENGTH;
   const displayContent = showFullContent || !shouldShowSeeMore ? content : content.substring(0, MAX_CONTENT_LENGTH) + '...';
 
+  // Fetch komentar sesuai post_id
+  const fetchComments = async () => {
+    const { data, error } = await supabase.from('comments').select(`id, content, created_at, profiles(full_name, avatar_url)`).eq('post_id', id).order('created_at', { ascending: false });
+
+    if (!error) setComments(data || []);
+  };
+
+  // Submit komentar
+  const handleSubmitComment = async () => {
+    if (!comment.trim()) return;
+
+    const { error } = await supabase.from('comments').insert({
+      content: comment,
+      post_id: id,
+      user_id,
+    });
+
+    if (!error) {
+      setComment('');
+      fetchComments();
+    }
+  };
+
+  useEffect(() => {
+    if (isModalVisible) {
+      fetchComments();
+    }
+  }, [isModalVisible]);
+
   return (
     <View className="p-4 mb-4 bg-white rounded-lg shadow-md">
-      {/* Header menggunakan komponen terpisah dengan full_name */}
-      <ProfileHeader full_name={full_name} created_at={created_at} />
+      <ProfileHeader full_name={full_name} created_at={created_at} avatar_url={avatar_url} />
 
-      {/* Post Image */}
       <Image source={{ uri: image }} className="w-full h-64 mb-2 rounded-lg" />
 
-      {/* Action Buttons */}
-      <View className="flex-row items-center gap-5 mb-2 space-x-4 ">
+      <View className="flex-row items-center gap-5 mb-2 space-x-4">
         <TouchableOpacity onPress={() => setIsLiked(!isLiked)}>
           <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={30} color={isLiked ? '#ef4444' : '#6b7280'} />
         </TouchableOpacity>
@@ -43,7 +72,6 @@ const PostCard = ({ id, user_id, content, image, created_at, full_name }: PostCa
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
       <View>
         <Text className="text-gray-700">
           {displayContent}
@@ -60,16 +88,39 @@ const PostCard = ({ id, user_id, content, image, created_at, full_name }: PostCa
         </Text>
       </View>
 
-      {/* Comments Modal */}
+      {/* Modal Komentar */}
       <Modal animationType="slide" transparent={true} visible={isModalVisible} onRequestClose={() => setIsModalVisible(false)}>
         <View className="justify-end flex-1 bg-black/50">
           <View className="h-full p-4 bg-white rounded-t-2xl">
             <Pressable onPress={() => setIsModalVisible(false)} className="mb-4">
               <Ionicons name="arrow-back" size={24} color="black" />
             </Pressable>
+
             <Text className="text-lg font-bold">Comments</Text>
-            <Text className="mt-4 text-gray-500">Belum ada yang berkomentar</Text>
-            {/* Add comment input or list here */}
+
+            <ScrollView className="flex-1 mt-4">
+              {comments.length === 0 ? (
+                <Text className="text-gray-500">Belum ada yang berkomentar</Text>
+              ) : (
+                comments.map((comment) => (
+                  <View key={comment.id} className="flex-row gap-3 mb-4 space-x-2">
+                    <Image source={{ uri: comment.profiles?.avatar_url || 'https://placehold.co/40' }} className="w-10 h-10 rounded-full" />
+                    <View className="flex-1">
+                      <Text className="font-semibold">{comment.profiles?.full_name || 'User'}</Text>
+                      <Text className="text-gray-600">{comment.content}</Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+
+            {/* Input komentar */}
+            <View className="flex-row items-center mt-4">
+              <TextInput value={comment} onChangeText={setComment} placeholder="Tulis komentar..." className="flex-1 px-4 py-2 mr-2 bg-gray-100 rounded-full" />
+              <TouchableOpacity onPress={handleSubmitComment}>
+                <Ionicons name="send" size={24} color="#F472B6" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

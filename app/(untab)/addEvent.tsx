@@ -9,6 +9,7 @@ export default function AddEventScreen() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [place, setPlace] = useState('');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -31,13 +32,14 @@ export default function AddEventScreen() {
       description: description || null,
       event_date: date.toISOString(),
       created_by: user.id,
+      place: place || null, // ✅ tambahkan kolom place
     });
 
     if (error) {
       Alert.alert('Gagal menambahkan acara', error.message);
     } else {
       Alert.alert('Sukses', 'Acara berhasil ditambahkan');
-      router.back(); // kembali ke ScheduleScreen
+      router.back();
     }
   };
 
@@ -50,6 +52,9 @@ export default function AddEventScreen() {
 
       <Text className="mb-1 text-gray-700">Deskripsi (opsional)</Text>
       <TextInput className="px-4 py-2 mb-4 bg-white border rounded-md" placeholder="Tulis deskripsi singkat" value={description} onChangeText={setDescription} />
+
+      <Text className="mb-1 text-gray-700">Tempat</Text>
+      <TextInput className="px-4 py-2 mb-4 bg-white border rounded-md" placeholder="Contoh: Aula RT, Balai Warga" value={place} onChangeText={setPlace} />
 
       <Text className="mb-1 text-gray-700">Tanggal</Text>
       <TouchableOpacity className="px-4 py-2 mb-4 bg-white border rounded-md" onPress={() => setShowDatePicker(true)}>
