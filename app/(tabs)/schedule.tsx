@@ -1,70 +1,22 @@
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
-const eventData = [
-  {
-    date: '6 Agustus 2025',
-    title: 'Penyuluhan ke desa A',
-    isAnswered: true,
-    isAttending: true,
-  },
-  {
-    date: '7 Agustus 2025',
-    title: 'Pelatihan UMKM',
-    isAnswered: true,
-    isAttending: false,
-  },
-  {
-    date: '8 Agustus 2025',
-    title: 'Rapat Koordinasi',
-    isAnswered: false,
-  },
-  {
-    date: '9 Agustus 2025',
-    title: 'Kunjungan Puskesmas',
-    isAnswered: true,
-    isAttending: true,
-  },
-  {
-    date: '10 Agustus 2025',
-    title: 'Penyuluhan Gizi',
-    isAnswered: false,
-  },
-  {
-    date: '11 Agustus 2025',
-    title: 'Pemeriksaan Kesehatan Gratis',
-    isAnswered: true,
-    isAttending: false,
-  },
-  {
-    date: '12 Agustus 2025',
-    title: 'Donor Darah Desa B',
-    isAnswered: false,
-  },
-  {
-    date: '13 Agustus 2025',
-    title: 'Bakti Sosial',
-    isAnswered: true,
-    isAttending: true,
-  },
-  {
-    date: '14 Agustus 2025',
-    title: 'Seminar Pertanian',
-    isAnswered: false,
-  },
-];
-
-// ✅ Function component EventCard langsung di file ini
-function EventCard({
-  date,
-  title,
-  isAnswered,
-  isAttending,
-}: {
-  date: string;
+interface Event {
+  id: string;
   title: string;
-  isAnswered: boolean;
-  isAttending?: boolean;
-}) {
+  event_date: string;
+}
+
+interface AttendanceMap {
+  [eventId: string]: {
+    isAnswered: boolean;
+    isAttending?: boolean;
+  };
+}
+
+function EventCard({ id, date, title, isAnswered, isAttending, onPress }: { id: string; date: string; title: string; isAnswered: boolean; isAttending?: boolean; onPress: (eventId: string, attend: boolean) => void }) {
   return (
     <View className="p-4 mb-4 bg-white shadow rounded-xl">
       <Text className="text-sm text-gray-400">{date}</Text>
@@ -72,6 +24,7 @@ function EventCard({
 
       <View className="flex-row space-x-2">
         <TouchableOpacity
+          onPress={() => onPress(id, true)}
           className={`flex-1 py-2 rounded-full items-center 
             ${isAnswered ? (isAttending ? 'bg-pink-500' : 'bg-pink-200') : 'bg-gray-200'}`}
         >
@@ -84,12 +37,13 @@ function EventCard({
         </TouchableOpacity>
 
         <TouchableOpacity
+          onPress={() => onPress(id, false)}
           className={`flex-1 py-2 rounded-full items-center 
-            ${isAnswered ? (!isAttending ? 'bg-pink-200' : 'bg-pink-500') : 'bg-gray-200'}`}
+            ${isAnswered ? (!isAttending ? 'bg-pink-500' : 'bg-pink-200') : 'bg-gray-200'}`}
         >
           <Text
             className={`font-semibold 
-              ${isAnswered ? (!isAttending ? 'text-pink-600' : 'text-white') : 'text-gray-400'}`}
+              ${isAnswered ? (!isAttending ? 'text-white' : 'text-pink-600') : 'text-gray-400'}`}
           >
             Tidak
           </Text>
@@ -102,16 +56,111 @@ function EventCard({
 }
 
 export default function ScheduleScreen() {
+  const router = useRouter();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceMap>({});
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const session = (await supabase.auth.getSession()).data.session;
+      const user = session?.user;
+
+      if (!user) return;
+
+      setUserId(user.id);
+
+      const { data: eventsData } = await supabase.from('events').select('id, title, event_date').order('event_date', { ascending: true });
+
+      setEvents(eventsData || []);
+
+      const { data: attendanceData } = await supabase.from('event_attendance').select('event_id, is_attending').eq('user_id', user.id);
+
+      const attendanceMap: AttendanceMap = {};
+      (attendanceData || []).forEach((a) => {
+        attendanceMap[a.event_id] = {
+          isAnswered: true,
+          isAttending: a.is_attending,
+        };
+      });
+
+      setAttendance(attendanceMap);
+    };
+
+    fetchData();
+
+    // ✅ Real-time insert listener
+    const channel = supabase
+      .channel('realtime-events')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'events',
+        },
+        (payload) => {
+          const newEvent = payload.new as Event;
+          setEvents((prev) => [...prev, newEvent]);
+        }
+      )
+      .subscribe();
+
+    // Cleanup
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleAttendance = async (eventId: string, isAttending: boolean) => {
+    if (!userId) return;
+
+    const existing = await supabase.from('event_attendance').select('*').eq('event_id', eventId).eq('user_id', userId).maybeSingle();
+
+    if (existing.data) {
+      await supabase.from('event_attendance').update({ is_attending: isAttending }).eq('id', existing.data.id);
+    } else {
+      await supabase.from('event_attendance').insert({
+        event_id: eventId,
+        user_id: userId,
+        is_attending: isAttending,
+      });
+    }
+
+    setAttendance((prev) => ({
+      ...prev,
+      [eventId]: {
+        isAnswered: true,
+        isAttending,
+      },
+    }));
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="p-4">
-        {eventData.map((event, index) => (
+    <SafeAreaView className="flex-1 mt-10 bg-gray-50">
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
+        <Text className="text-3xl font-bold text-gray-800">Jadwal Kegiatan PKK</Text>
+        <TouchableOpacity className="px-4 py-2 bg-pink-500 rounded-full" onPress={() => router.push('/(untab)/addEvent')}>
+          <Text className="font-semibold text-white">+ Tambah</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ScrollView */}
+      <ScrollView className="p-4 pt-0">
+        {events.map((event) => (
           <EventCard
-            key={index}
-            date={event.date}
+            key={event.id}
+            id={event.id}
+            date={new Date(event.event_date).toLocaleDateString('id-ID', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
             title={event.title}
-            isAnswered={event.isAnswered}
-            isAttending={event.isAttending}
+            isAnswered={attendance[event.id]?.isAnswered ?? false}
+            isAttending={attendance[event.id]?.isAttending}
+            onPress={handleAttendance}
           />
         ))}
       </ScrollView>
