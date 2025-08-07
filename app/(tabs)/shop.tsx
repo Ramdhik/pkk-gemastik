@@ -1,56 +1,83 @@
-import { FlatList, ScrollView, Text, TextInput, View } from 'react-native';
+// app/shop.tsx
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const categories = ['Lorem', 'Lorem', 'Lorem', 'Lorem'];
-const products = [
-  { id: '1', name: 'Lorem Ipsum', price: 15000 },
-  { id: '2', name: 'Lorem Ipsum', price: 15000 },
-  { id: '3', name: 'Lorem Ipsum', price: 15000 },
-  { id: '4', name: 'Lorem Ipsum', price: 15000 },
-];
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  image: string;
+}
 
-// const screenWidth = Dimensions.get('window').width;
-// const itemWidth = (screenWidth - 24 * 2 - 16) / 2; // padding + gap
+function ProductCard({ id, title, price, image }: { id: string; title: string; price: number; image: string }) {
+  const router = useRouter();
 
-export default function ExploreScreen() {
   return (
-    <ScrollView className="px-6 pt-6 bg-white">
-      {/* Search Bar */}
-      <TextInput placeholder="Cari Produk yang Kamu Inginkan" placeholderTextColor="#999" className="px-4 py-3 mb-6 text-sm bg-gray-100 rounded-full" />
-
-      {/* Header Kategori */}
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-base font-bold">Kategori Produk</Text>
-        <Text className="text-xs font-semibold text-pink-500">Lihat Selengkapnya</Text>
+    <TouchableOpacity
+      onPress={() => {
+        console.log('Navigating to product ID:', id);
+        router.push(`../(untab)/shopDetails/${id}`);
+      }}
+      className="w-[47%]"
+      activeOpacity={0.8}
+    >
+      <View
+        className="p-4 bg-white shadow-md rounded-2xl"
+        style={{
+          elevation: 5,
+          height: 250, // 👈 tinggi kartu diseragamkan
+          justifyContent: 'space-between',
+        }}
+      >
+        {image ? <Image source={{ uri: image }} className="mb-2 bg-gray-200 aspect-square rounded-xl" /> : <View className="mb-2 bg-gray-200 aspect-square rounded-xl" />}
+        <View>
+          <Text className="text-lg font-bold text-pink-800" numberOfLines={2}>
+            {title}
+          </Text>
+          <Text className="mt-1 text-base font-semibold text-gray-700">Rp{price.toLocaleString()}</Text>
+        </View>
       </View>
+    </TouchableOpacity>
+  );
+}
 
-      {/* List Kategori */}
-      <FlatList
-        data={categories}
-        horizontal
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={{ gap: 12, marginBottom: 24 }}
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <View className="items-center w-[60px]">
-            <View className="w-[60px] h-[60px] bg-gray-200 rounded-xl mb-1" />
-            <Text className="text-xs text-center">{item}</Text>
-          </View>
-        )}
-      />
+export default function ShopScreen() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-      {/* Untuk Kamu */}
-      <Text className="mb-3 text-base font-bold">Untuk Kamu</Text>
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-      {/* Grid Produk */}
-      <View className="flex-row flex-wrap justify-between pb-8 gap-y-4">
-        {products.map((item) => (
-          <View key={item.id} className="bg-white rounded-xl p-3 shadow-sm w-[47%]" style={{ elevation: 3 }}>
-            <View className="mb-2 bg-gray-200 aspect-square rounded-xl" />
-            <Text className="text-sm font-semibold">{item.name}</Text>
-            <Text className="text-xs text-gray-500">Rp{item.price.toLocaleString()}</Text>
-          </View>
-        ))}
-      </View>
+  const fetchProducts = async () => {
+    const { data, error } = await supabase.from('products').select('*');
+
+    if (error) {
+      console.error('Error fetching products:', error.message);
+    } else {
+      setProducts(data as Product[]);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <ScrollView className="px-6 pt-8 mt-5 bg-white">
+      <TextInput placeholder="Cari Produk Kesukaan Ibu ✨" placeholderTextColor="#888" className="px-5 py-4 mb-6 text-lg bg-pink-100 border border-pink-300 rounded-full" />
+
+      <Text className="mb-5 text-2xl font-extrabold text-pink-800">🌸 Rekomendasi Untuk Ibu 🌸</Text>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#e91e63" />
+      ) : (
+        <View className="flex-row flex-wrap justify-between pb-12 gap-y-6">
+          {products.map((item) => (
+            <ProductCard key={item.id} id={item.id} title={item.title} price={item.price} image={item.image} />
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
