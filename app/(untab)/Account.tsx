@@ -1,86 +1,112 @@
 import { Session } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function Account({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
-  const [username, setUsername] = useState('');
-  const [website, setWebsite] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState(session?.user?.email || '');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [role, setRole] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [desaAsal, setDesaAsal] = useState('');
 
   useEffect(() => {
-    if (session) getUser();
+    if (session) getProfile();
   }, [session]);
 
-  async function getUser() {
+  async function getProfile() {
     try {
       setLoading(true);
-      if (!session?.user) throw new Error('No user on the session!');
-
-      const { data, error, status } = await supabase.from('profiles').select(`username, website, avatar_url`).eq('id', session?.user.id).single();
-
-      if (error && status !== 406) throw error;
-
-      if (data) {
-        setUsername(data.username);
-        setWebsite(data.website);
-        setAvatarUrl(data.avatar_url);
-      }
-    } catch (error) {
-      if (error instanceof Error) Alert.alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateUser({ username, website, avatar_url }: { username: string; website: string; avatar_url: string }) {
-    try {
-      setLoading(true);
-      if (!session?.user) throw new Error('No user on the session!');
-
-      const updates = {
-        id: session?.user.id,
-        username,
-        website,
-        avatar_url,
-        updated_at: new Date(),
-      };
-
-      const { error } = await supabase.from('profiles').upsert(updates);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url, role, birth_date, desa_asal')
+        .eq('id', session.user.id)
+        .single();
 
       if (error) throw error;
+
+      console.log('✅ Profile data fetched from Supabase:', data);
+
+      setFullName(data.full_name || '');
+      setAvatarUrl(data.avatar_url || '');
+      setRole(data.role || '');
+      setBirthDate(data.birth_date || '');
+      setDesaAsal(data.desa_asal || '');
     } catch (error) {
-      if (error instanceof Error) Alert.alert(error.message);
+      if (error instanceof Error)
+        Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <View className="px-4 mt-10">
-      <View className="mb-4">
-        <Text className="mb-1 text-white">Email</Text>
-        <TextInput className="px-3 py-2 text-black bg-gray-100 border border-gray-300 rounded" value={session?.user?.email || ''} editable={false} />
+    <ScrollView className="flex-1 px-6 pt-12 bg-white">
+      {/* Avatar */}
+      <View className="items-center mb-6">
+        <Image
+          source={{
+            uri: avatarUrl || 'https://via.placeholder.com/100',
+          }}
+          className="w-24 h-24 mb-4 rounded-full"
+        />
+        <Text className="text-xl font-bold text-gray-900">{fullName}</Text>
+        <Text className="text-sm text-gray-500">@{email}</Text>
       </View>
 
-      <View className="mb-4">
-        <Text className="mb-1 text-white">Username</Text>
-        <TextInput className="px-3 py-2 text-black bg-white border border-gray-300 rounded" onChangeText={setUsername} value={username} placeholder="Enter username" />
+      {/* Profile Info */}
+      <View className="mb-6 space-y-4">
+        <View>
+          <Text className="text-sm text-gray-600">Tanggal Lahir</Text>
+          <Text className="text-base font-medium text-gray-800">
+            {birthDate || '-'}
+          </Text>
+        </View>
+
+        <View>
+          <Text className="text-sm text-gray-600">Desa Asal</Text>
+          <Text className="text-base font-medium text-gray-800">
+            {desaAsal || '-'}
+          </Text>
+        </View>
+
+        <View>
+          <Text className="text-sm text-gray-600">Peran</Text>
+          <Text className="text-base font-medium text-gray-800">
+            {role || '-'}
+          </Text>
+        </View>
       </View>
 
-      <View className="mb-4">
-        <Text className="mb-1 text-white">Website</Text>
-        <TextInput className="px-3 py-2 text-black bg-white border border-gray-300 rounded" onChangeText={setWebsite} value={website} placeholder="Enter website" />
+      {/* Buttons */}
+      <View className="flex-row justify-between space-x-4">
+        <TouchableOpacity
+          onPress={() => Alert.alert('Edit Profile Coming Soon')}
+          className="flex-1 py-3 bg-pink-500 rounded-lg"
+        >
+          <Text className="font-semibold text-center text-white">
+            Edit Profile
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => supabase.auth.signOut()}
+          className="flex-1 py-3 border border-pink-500 rounded-lg"
+        >
+          <Text className="font-semibold text-center text-pink-500">
+            Logout
+          </Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity className={`bg-blue-500 rounded py-3 mb-3 ${loading && 'opacity-50'}`} onPress={() => updateUser({ username, website, avatar_url: avatarUrl })} disabled={loading}>
-        <Text className="font-semibold text-center text-white">{loading ? 'Loading...' : 'Update'}</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity className="py-3 bg-red-500 rounded" onPress={() => supabase.auth.signOut()}>
-        <Text className="font-semibold text-center text-white">Sign Out</Text>
-      </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }

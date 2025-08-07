@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
@@ -6,10 +8,12 @@ import { ActivityIndicator, Alert, Image, Text, TextInput, TouchableOpacity, Vie
 import { supabase } from '../../lib/supabase';
 
 export default function UploadImageScreen() {
+  const navigation = useNavigation();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
-  const [content, setContent] = useState<string>(''); // ✅ State baru
+  const [content, setContent] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const pickAndUpload = async () => {
     try {
@@ -61,7 +65,6 @@ export default function UploadImageScreen() {
     }
   };
 
-  // ✅ Fungsi untuk posting ke database
   const handlePost = async () => {
     if (!publicUrl || !content.trim()) {
       Alert.alert('Oops', 'Gambar dan content harus diisi.');
@@ -70,6 +73,7 @@ export default function UploadImageScreen() {
 
     try {
       setIsLoading(true);
+      setSuccessMessage(null); // clear dulu
 
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData?.session?.user?.id;
@@ -86,11 +90,10 @@ export default function UploadImageScreen() {
         console.error('Gagal insert post:', error.message);
         Alert.alert('Error', 'Gagal menyimpan postingan.');
       } else {
-        Alert.alert('Sukses', 'Postingan berhasil dibuat!');
-        // Reset form
         setContent('');
         setImageUri(null);
         setPublicUrl(null);
+        setSuccessMessage('✅ Postingan berhasil dikirim!');
       }
     } catch (err: any) {
       console.error('Error saat insert:', err.message);
@@ -101,20 +104,47 @@ export default function UploadImageScreen() {
   };
 
   return (
-    <View className="items-center justify-center flex-1 p-5 bg-white">
-      <TouchableOpacity className="items-center justify-center w-full h-48 mb-4 bg-gray-200 border border-gray-400 rounded-xl" onPress={pickAndUpload} disabled={isLoading}>
-        {imageUri ? <Image source={{ uri: imageUri }} className="w-full h-full rounded-xl" resizeMode="cover" /> : <Text className="text-gray-600">Pilih Gambar</Text>}
+    <View className="flex-1 p-6 mt-10 bg-pink-50">
+      {/* Tombol Back */}
+      <TouchableOpacity onPress={() => navigation.goBack()} className="absolute z-10 top-6 left-6">
+        <Ionicons name="arrow-back" size={28} color="#EC4899" />
       </TouchableOpacity>
 
-      {/* ✅ Input untuk content */}
-      <TextInput className="w-full px-4 py-2 mb-4 text-base border border-gray-400 rounded-xl" placeholder="Tulis content..." value={content} onChangeText={setContent} multiline />
+      <Text className="mb-6 text-2xl font-bold text-center text-pink-700">📸 Upload Postingan</Text>
 
-      {/* ✅ Tombol posting */}
-      <TouchableOpacity onPress={handlePost} className="w-full py-3 mb-4 bg-pink-500 rounded-xl" disabled={isLoading || !publicUrl}>
-        <Text className="font-semibold text-center text-white">Posting</Text>
+      {/* Upload Area */}
+      <TouchableOpacity onPress={pickAndUpload} disabled={isLoading} className="items-center justify-center w-full h-56 mb-6 bg-pink-100 border-2 border-pink-400 border-dashed shadow-md rounded-3xl">
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} className="w-full h-full rounded-3xl" resizeMode="cover" />
+        ) : (
+          <View className="items-center">
+            <Ionicons name="image-outline" size={40} color="#F472B6" />
+            <Text className="mt-2 text-lg text-pink-600">Ketuk untuk pilih gambar</Text>
+          </View>
+        )}
       </TouchableOpacity>
 
-      {isLoading && <ActivityIndicator size="large" color="#F75C9D" className="mb-4" />}
+      {/* Caption Input */}
+      <TextInput
+        className="w-full px-5 py-4 mb-6 text-lg text-gray-800 bg-white border-2 border-pink-300 shadow-sm rounded-2xl"
+        placeholder="Tulis caption atau cerita kamu di sini..."
+        value={content}
+        onChangeText={setContent}
+        multiline
+        numberOfLines={4}
+      />
+
+      {/* Tombol Posting */}
+      <TouchableOpacity onPress={handlePost} className="flex-row items-center justify-center w-full py-4 mb-2 bg-pink-500 shadow-md rounded-3xl" disabled={isLoading || !publicUrl}>
+        <Ionicons name="send" size={22} color="#fff" />
+        <Text className="ml-2 text-lg font-bold text-white">Posting Sekarang</Text>
+      </TouchableOpacity>
+
+      {/* Notifikasi sukses */}
+      {successMessage && <Text className="mt-2 font-medium text-center text-green-600">{successMessage}</Text>}
+
+      {/* Loading */}
+      {isLoading && <ActivityIndicator size="large" color="#EC4899" className="mt-4" />}
     </View>
   );
 }
