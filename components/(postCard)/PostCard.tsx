@@ -91,7 +91,7 @@ const PostCard = ({ id, user_id, content, image, created_at, full_name, avatar_u
       {/* Modal Komentar */}
       <Modal animationType="slide" transparent={true} visible={isModalVisible} onRequestClose={() => setIsModalVisible(false)}>
         <View className="justify-end flex-1 bg-black/50">
-          <View className="h-full p-4 bg-white rounded-t-2xl">
+          <View className="h-full p-4 bg-white">
             <Pressable onPress={() => setIsModalVisible(false)} className="mb-4">
               <Ionicons name="arrow-back" size={24} color="black" />
             </Pressable>
