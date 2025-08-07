@@ -76,10 +76,10 @@ export default function TabLayout() {
         onPress={handleCreatePost}
         style={{
           position: 'absolute',
-          bottom: 60,
-          alignSelf: 'center',
-          width: 58,
-          height: 58,
+          bottom: 100,
+          right: 20,
+          width: 60,
+          height: 60,
           borderRadius: 32.5,
           backgroundColor: '#F75C9D',
           justifyContent: 'center',
