@@ -1,274 +1,120 @@
-import { Ionicons } from '@expo/vector-icons';
-// import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
-export default function CreatePostScreen() {
-  // const [image, setImage] = useState<string | null>(null);
-  const [content, setContent] = useState('');
+export default function UploadImageScreen() {
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [publicUrl, setPublicUrl] = useState<string | null>(null);
+  const [content, setContent] = useState<string>(''); // ✅ State baru
 
-  // useEffect(() => {
-  //   (async () => {
-  //     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  //     if (status !== 'granted') {
-  //       Alert.alert('Izin Diperlukan', 'Aplikasi memerlukan akses ke galeri foto Anda untuk memilih gambar.');
-  //     }
-  //   })();
-  // }, []);
+  const pickAndUpload = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Izin Ditolak', 'Tidak dapat mengakses galeri foto.');
+        return;
+      }
 
-  // const pickImage = async () => {
-  //   try {
-  //     let result = await ImagePicker.launchImageLibraryAsync({
-  //       mediaTypes: ['images'],
-  //       allowsEditing: true,
-  //       aspect: [4, 3],
-  //       quality: 0.8,
-  //     });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
 
-  //     if (!result.canceled) {
-  //       setImage(result.assets[0].uri);
-  //     }
-  //   } catch (error) {
-  //     Alert.alert('Error', 'Gagal memilih gambar');
-  //     console.error('Error picking image:', error);
-  //   }
-  // };
+      if (result.canceled || !result.assets?.length) return;
 
-  // const uploadImage = async () => {
-  //   if (!image) {
-  //     Alert.alert('Gambar Diperlukan', 'Anda harus memilih gambar untuk diupload.');
-  //     return;
-  //   }
+      const uri = result.assets[0].uri;
+      setImageUri(uri);
+      setIsLoading(true);
 
-  //   setIsLoading(true);
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-  //   try {
-  //     console.log('🚀 Starting image upload...');
-  //     console.log('📱 Image URI:', image);
+      const arrayBuffer = decode(base64);
+      const ext = uri.split('.').pop() || 'jpg';
+      const filename = `${Date.now()}.${ext}`;
+      const path = `posts/${filename}`;
+      const contentType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
 
-  //     // Check Supabase connection
-  //     console.log('🔗 Checking Supabase connection...');
-  //     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      const { error } = await supabase.storage.from('posting').upload(path, arrayBuffer, {
+        contentType,
+        upsert: false,
+      });
 
-  //     if (bucketsError) {
-  //       console.error('❌ Supabase connection failed:', bucketsError);
-  //       Alert.alert('Error', 'Tidak dapat terhubung ke Supabase. Periksa koneksi internet Anda.');
-  //       return;
-  //     }
+      if (error) {
+        console.error('Gagal upload gambar:', error.message);
+        throw error;
+      }
 
-  //     console.log('✅ Supabase connected. Available buckets:', buckets?.map(b => b.name));
+      const { data } = supabase.storage.from('posting').getPublicUrl(path);
+      setPublicUrl(data.publicUrl);
+    } catch (err: any) {
+      console.error('Terjadi error:', err.message);
+      Alert.alert('Error', err.message || 'Gagal upload gambar.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  //     // Check if 'posting' bucket exists
-  //     const postingBucket = buckets?.find(bucket => bucket.name === 'posting');
-  //     if (!postingBucket) {
-  //       console.error('❌ Bucket "posting" not found!');
-  //       Alert.alert('Error', 'Bucket "posting" tidak ditemukan di Supabase Storage.');
-  //       return;
-  //     }
-
-  //     console.log('✅ Bucket "posting" found:', postingBucket);
-
-  //     // Convert image to blob
-  //     const response = await fetch(image);
-  //     const blob = await response.blob();
-
-  //     console.log('📦 Blob size:', blob.size, 'bytes');
-  //     console.log('📦 Blob type:', blob.type);
-
-  //     // Generate file name
-  //     const fileExt = image.split('.').pop()?.toLowerCase() || 'jpg';
-  //     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-  //     const filePath = `posts/${fileName}`;
-
-  //     console.log('📁 Uploading to bucket: posting');
-  //     console.log('📁 File path:', filePath);
-  //     console.log('📁 Content type:', `image/${fileExt}`);
-
-  //     // Upload to Supabase Storage
-  //     const { data, error } = await supabase.storage.from('posting').upload(filePath, blob, {
-  //       contentType: `image/${fileExt}`,
-  //       upsert: false,
-  //     });
-
-  //     if (error) {
-  //       console.error('❌ Upload error:', error);
-  //       console.error('❌ Error name:', error.name);
-  //       console.error('❌ Error message:', error.message);
-  //       console.error('❌ Error cause:', error.cause);
-  //       console.error('❌ Full error object:', JSON.stringify(error, null, 2));
-  //       Alert.alert('Error', `Upload gagal: ${error.message || 'Network request failed'}`);
-  //       return;
-  //     }
-
-  //     console.log('✅ Upload successful!', data);
-
-  //     // Get public URL
-  //     const {
-  //       data: { publicUrl },
-  //     } = supabase.storage.from('posting').getPublicUrl(filePath);
-
-  //     console.log('🔗 Public URL:', publicUrl);
-
-  //     // Success
-  //     Alert.alert('Berhasil!', 'Gambar berhasil diupload!', [
-  //       {
-  //         text: 'OK',
-  //         onPress: () => {
-  //           setImage(null);
-  //           router.back();
-  //         },
-  //       },
-  //     ]);
-  //   } catch (error) {
-  //     console.error('💥 Error:', error);
-  //     console.error('💥 Error message:', error.message);
-  //     console.error('💥 Error stack:', error.stack);
-  //     Alert.alert('Error', 'Terjadi kesalahan. Silakan coba lagi.');
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  // const removeImage = () => {
-  //   setImage(null);
-  // };
-
-  const createPost = async () => {
-    if (!content.trim()) {
-      Alert.alert('Content Diperlukan', 'Mohon tulis content untuk postingan Anda.');
+  // ✅ Fungsi untuk posting ke database
+  const handlePost = async () => {
+    if (!publicUrl || !content.trim()) {
+      Alert.alert('Oops', 'Gambar dan content harus diisi.');
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      console.log('🚀 Starting post creation...');
-      console.log('📝 Content:', content);
+      setIsLoading(true);
 
-      // Get current user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
 
-      if (userError) {
-        console.error('❌ Auth error:', userError);
-        Alert.alert('Error', 'Gagal mendapatkan data user. Silakan login ulang.');
-        return;
-      }
-
-      if (!user) {
-        console.error('❌ User not authenticated');
-        Alert.alert('Error', 'Anda harus login terlebih dahulu.');
-        return;
-      }
-
-      console.log('✅ User authenticated:', user.id);
-
-      // Create post data
-      const postData = {
-        user_id: user.id,
-        content: content.trim(),
-        image: '', // Empty string for now since we're not uploading images
-      };
-
-      console.log('📤 Inserting post data:', postData);
-
-      // Insert post to database
-      const { data, error } = await supabase.from('posts').insert([postData]).select();
-
-      if (error) {
-        console.error('❌ Database error:', error);
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error details:', JSON.stringify(error, null, 2));
-        Alert.alert('Error', `Gagal menyimpan postingan: ${error.message}`);
-        return;
-      }
-
-      console.log('✅ Post created successfully:', data);
-
-      // Success
-      Alert.alert('Berhasil!', 'Postingan Anda telah berhasil dibuat.', [
+      const { error } = await supabase.from('posts').insert([
         {
-          text: 'OK',
-          onPress: () => {
-            setContent('');
-            router.back();
-          },
+          image: publicUrl,
+          content,
+          user_id: userId,
         },
       ]);
-    } catch (error) {
-      console.error('💥 Error creating post:', error);
-      Alert.alert('Error', 'Terjadi kesalahan. Silakan coba lagi.');
+
+      if (error) {
+        console.error('Gagal insert post:', error.message);
+        Alert.alert('Error', 'Gagal menyimpan postingan.');
+      } else {
+        Alert.alert('Sukses', 'Postingan berhasil dibuat!');
+        // Reset form
+        setContent('');
+        setImageUri(null);
+        setPublicUrl(null);
+      }
+    } catch (err: any) {
+      console.error('Error saat insert:', err.message);
+      Alert.alert('Error', err.message || 'Gagal menyimpan postingan.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ScrollView className="flex-1 bg-white">
-      <View className="flex-1 px-5 pt-12">
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-8">
-          <TouchableOpacity onPress={() => router.back()} className="p-2">
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-gray-800">Buat Postingan</Text>
-          <View className="w-8" />
-        </View>
+    <View className="items-center justify-center flex-1 p-5 bg-white">
+      <TouchableOpacity className="items-center justify-center w-full h-48 mb-4 bg-gray-200 border border-gray-400 rounded-xl" onPress={pickAndUpload} disabled={isLoading}>
+        {imageUri ? <Image source={{ uri: imageUri }} className="w-full h-full rounded-xl" resizeMode="cover" /> : <Text className="text-gray-600">Pilih Gambar</Text>}
+      </TouchableOpacity>
 
-        {/* Content Section */}
-        <View className="mb-8">
-          <Text className="mb-3 text-lg font-semibold text-gray-800">Content</Text>
-          <TextInput
-            className="w-full min-h-[200px] border border-gray-300 rounded-xl p-4 text-base text-gray-800 bg-gray-50"
-            placeholder="Tulis content postingan Anda..."
-            multiline
-            numberOfLines={8}
-            value={content}
-            onChangeText={setContent}
-            placeholderTextColor="#999"
-            style={{ textAlignVertical: 'top' }}
-            editable={!isLoading}
-          />
-          <Text className="mt-2 text-sm text-gray-500">{content.length}/1000 karakter</Text>
-        </View>
+      {/* ✅ Input untuk content */}
+      <TextInput className="w-full px-4 py-2 mb-4 text-base border border-gray-400 rounded-xl" placeholder="Tulis content..." value={content} onChangeText={setContent} multiline />
 
-        {/* Create Post Button */}
-        <TouchableOpacity className={`py-4 px-8 rounded-xl items-center shadow-lg shadow-black/20 mb-8 ${isLoading || !content.trim() ? 'bg-gray-400' : 'bg-[#F75C9D]'}`} onPress={createPost} disabled={isLoading || !content.trim()}>
-          {isLoading ? (
-            <View className="flex-row items-center">
-              <ActivityIndicator size="small" color="#fff" className="mr-2" />
-              <Text className="text-lg font-bold text-white">Membuat Postingan...</Text>
-            </View>
-          ) : (
-            <Text className="text-lg font-bold text-white">Buat Postingan</Text>
-          )}
-        </TouchableOpacity>
+      {/* ✅ Tombol posting */}
+      <TouchableOpacity onPress={handlePost} className="w-full py-3 mb-4 bg-pink-500 rounded-xl" disabled={isLoading || !publicUrl}>
+        <Text className="font-semibold text-center text-white">Posting</Text>
+      </TouchableOpacity>
 
-        {/* Commented Image Section */}
-        {/* <View className="mb-6">
-          <Text className="mb-3 text-lg font-semibold text-gray-800">Foto</Text>
-          <TouchableOpacity className="relative items-center justify-center w-full h-64 bg-gray-100 border border-gray-200 rounded-2xl" onPress={pickImage} disabled={isLoading}>
-            {image ? (
-              <>
-                <Image source={{ uri: image }} className="w-full h-full rounded-2xl" resizeMode="cover" />
-                <TouchableOpacity className="absolute p-1 rounded-full top-2 right-2 bg-black/50" onPress={removeImage}>
-                  <Ionicons name="close" size={20} color="#fff" />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <View className="items-center">
-                <Ionicons name="camera-outline" size={50} color="#888" />
-                <Text className="mt-2 text-base text-gray-600">Pilih Gambar</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View> */}
-      </View>
-    </ScrollView>
+      {isLoading && <ActivityIndicator size="large" color="#F75C9D" className="mb-4" />}
+    </View>
   );
 }
