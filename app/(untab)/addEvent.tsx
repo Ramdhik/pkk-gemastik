@@ -15,7 +15,7 @@ export default function AddEventScreen() {
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      Alert.alert('Judul wajib diisi');
+      Alert.alert('Nama acara belum diisi');
       return;
     }
 
@@ -23,7 +23,7 @@ export default function AddEventScreen() {
     const user = session?.user;
 
     if (!user) {
-      Alert.alert('Gagal mendapatkan user');
+      Alert.alert('Gagal mendapatkan data pengguna');
       return;
     }
 
@@ -32,33 +32,33 @@ export default function AddEventScreen() {
       description: description || null,
       event_date: date.toISOString(),
       created_by: user.id,
-      place: place || null, // ✅ tambahkan kolom place
+      place: place || null,
     });
 
     if (error) {
-      Alert.alert('Gagal menambahkan acara', error.message);
+      Alert.alert('Gagal menyimpan acara', error.message);
     } else {
-      Alert.alert('Sukses', 'Acara berhasil ditambahkan');
+      Alert.alert('Berhasil', 'Acara sudah tersimpan');
       router.back();
     }
   };
 
   return (
-    <View className="flex-1 p-6 bg-gray-50">
-      <Text className="mb-4 text-2xl font-bold text-gray-800">Tambah Acara Baru</Text>
+    <View className="flex-1 p-6 bg-pink-50">
+      <Text className="mt-10 mb-6 text-2xl font-bold text-center text-gray-800">Form Tambah Acara</Text>
 
-      <Text className="mb-1 text-gray-700">Judul Acara</Text>
-      <TextInput className="px-4 py-2 mb-4 bg-white border rounded-md" placeholder="Contoh: Pelatihan Kesehatan" value={title} onChangeText={setTitle} />
+      <Text className="mb-2 text-lg text-gray-700">Tuliskan Nama Acara*</Text>
+      <TextInput className="px-5 py-3 mb-5 text-lg bg-white border border-gray-300 rounded-full" placeholder="Misal: Pengajian Rutin Ibu-Ibu" value={title} onChangeText={setTitle} />
 
-      <Text className="mb-1 text-gray-700">Deskripsi (opsional)</Text>
-      <TextInput className="px-4 py-2 mb-4 bg-white border rounded-md" placeholder="Tulis deskripsi singkat" value={description} onChangeText={setDescription} />
+      <Text className="mb-2 text-lg text-gray-700">Deskripsi Acara (boleh dikosongkan)</Text>
+      <TextInput className="px-5 py-3 mb-5 text-lg bg-white border border-gray-300 rounded-full" placeholder="Contoh: Kegiatan pengajian setiap minggu..." value={description} onChangeText={setDescription} />
 
-      <Text className="mb-1 text-gray-700">Tempat</Text>
-      <TextInput className="px-4 py-2 mb-4 bg-white border rounded-md" placeholder="Contoh: Aula RT, Balai Warga" value={place} onChangeText={setPlace} />
+      <Text className="mb-2 text-lg text-gray-700">Lokasi Acara</Text>
+      <TextInput className="px-5 py-3 mb-5 text-lg bg-white border border-gray-300 rounded-full" placeholder="Contoh: Balai Warga, Rumah Bu RT" value={place} onChangeText={setPlace} />
 
-      <Text className="mb-1 text-gray-700">Tanggal</Text>
-      <TouchableOpacity className="px-4 py-2 mb-4 bg-white border rounded-md" onPress={() => setShowDatePicker(true)}>
-        <Text>{date.toLocaleDateString('id-ID')}</Text>
+      <Text className="mb-2 text-lg text-gray-700">Tanggal Acara</Text>
+      <TouchableOpacity className="px-5 py-3 mb-5 bg-white border border-gray-300 rounded-full" onPress={() => setShowDatePicker(true)}>
+        <Text className="text-lg">{date.toLocaleDateString('id-ID')}</Text>
       </TouchableOpacity>
 
       {showDatePicker && (
@@ -73,8 +73,8 @@ export default function AddEventScreen() {
         />
       )}
 
-      <TouchableOpacity className="items-center py-3 bg-pink-500 rounded-full" onPress={handleSubmit}>
-        <Text className="text-base font-semibold text-white">Simpan Acara</Text>
+      <TouchableOpacity className="items-center py-4 bg-pink-600 rounded-full" onPress={handleSubmit}>
+        <Text className="text-lg font-bold text-white">Simpan Acara</Text>
       </TouchableOpacity>
     </View>
   );

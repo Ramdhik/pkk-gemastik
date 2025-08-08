@@ -105,7 +105,7 @@ export default function UploadImageScreen() {
   };
 
   return (
-    <View className="flex-1 p-6 mt-10 bg-pink-50">
+    <View className="flex-1 p-6 bg-pink-50">
       {/* Tombol Back */}
       <TouchableOpacity onPress={() => navigation.goBack()} className="absolute z-10 top-6 left-6">
         <Ionicons name="arrow-back" size={28} color="#EC4899" />

@@ -76,11 +76,11 @@ export default function CartScreen() {
   return (
     <View className="flex-1 px-6 pt-10 bg-white">
       {/* Header */}
-      <View className="flex-row items-center mb-6">
+      <View className="flex-row items-center mt-5 mb-6">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#e91e63" />
+          <Ionicons name="arrow-back" size={30} color="#e91e63" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-pink-700">Keranjang Ibu</Text>
+        <Text className="text-2xl font-bold text-pink-700">Keranjang</Text>
       </View>
 
       <ScrollView className="mb-24">
