@@ -75,7 +75,7 @@ export default function SignUpWarga() {
 
   return (
     <View className="flex-1 px-6 pt-16 bg-white">
-      <Text className="mb-10 text-3xl font-bold text-center text-pink-900">Ayo Daftar Sekarang</Text>
+      <Text className="mt-10 mb-10 text-3xl font-bold text-center text-pink-700">Ayo Daftar Sekarang</Text>
 
       {/* Nama */}
       <Text className="mb-2 text-base font-semibold text-pink-900">Nama Lengkap</Text>

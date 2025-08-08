@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, AppState, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, AppState, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function SignIn() {
@@ -42,9 +42,20 @@ export default function SignIn() {
 
   return (
     <View className="justify-center flex-1 px-6 bg-white">
-      <Text className="text-center text-4xl font-extrabold text-[#4b0b26] mb-12">Selamat Datang</Text>
-
-      <Text className="mb-2 text-lg font-semibold text-[#4b0b26]">Email</Text>
+      {/* Logo tetap di atas dan tidak mengganggu layout */}
+      <View
+        style={{
+          position: 'absolute',
+          top: 80,
+          left: 0,
+          right: 0,
+          alignItems: 'center',
+          zIndex: 10, // pastikan di atas
+        }}
+      >
+        <Image source={require('../../assets/images/logo.png')} style={{ width: 400, height: 300, resizeMode: 'contain' }} />
+      </View>
+      <Text className="mb-2 text-lg font-semibold text-[#4b0b26] mt-36">Email</Text>
       <TextInput className="mb-5 rounded-full bg-pink-100 px-6 py-4 text-lg text-[#4b0b26]" placeholder="Ex: kamu@email.com" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
 
       <Text className="mb-2 text-lg font-semibold text-[#4b0b26]">Password</Text>
