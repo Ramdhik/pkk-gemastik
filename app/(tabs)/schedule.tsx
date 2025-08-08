@@ -20,19 +20,19 @@ function EventCard({ id, date, title, place, isAnswered, onPress }: { id: string
   const router = useRouter();
 
   return (
-    <View className="p-4 mb-6 bg-white shadow rounded-xl">
-      <Text className="text-sm text-gray-400">{date}</Text>
-      <Text className="mb-1 text-lg font-semibold text-black">{title}</Text>
-      {place && <Text className="mb-3 text-sm text-gray-600">{place}</Text>}
+    <View className="p-5 mb-6 bg-white shadow rounded-2xl">
+      <Text className="mb-1 text-base text-pink-500">{date}</Text>
+      <Text className="mb-1 text-xl font-bold text-gray-800">{title}</Text>
+      {place && <Text className="mb-3 text-base text-gray-600">{place}</Text>}
 
       <View className="flex-row space-x-2">
-        <TouchableOpacity disabled={isAnswered} onPress={() => onPress(id)} className={`flex-1 py-2 rounded-full items-center ${isAnswered ? 'bg-pink-500' : 'bg-gray-200'}`}>
-          <Text className={`font-semibold ${isAnswered ? 'text-white' : 'text-gray-600'}`}>{isAnswered ? 'Sudah Hadir' : 'Hadir'}</Text>
+        <TouchableOpacity disabled={isAnswered} onPress={() => onPress(id)} className={`flex-1 py-3 rounded-full items-center ${isAnswered ? 'bg-pink-500' : 'bg-pink-100'}`}>
+          <Text className={`text-base font-semibold ${isAnswered ? 'text-white' : 'text-pink-600'}`}>{isAnswered ? 'Ikut Hadir' : 'Hadir'}</Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity onPress={() => router.push(`../(untab)/eventDetails/${id}`)}>
-        <Text className="mt-2 text-xs text-gray-400 underline">Lihat Selengkapnya</Text>
+        <Text className="mt-3 text-sm text-pink-400 underline">Lihat Selengkapnya</Text>
       </TouchableOpacity>
     </View>
   );
@@ -163,9 +163,9 @@ export default function ScheduleScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 mt-10 bg-gray-50">
-      <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
-        <Text className="text-3xl font-bold text-gray-800">Jadwal Kegiatan PKK</Text>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <View className="flex-row items-center justify-between px-4 pt-4 pb-2 mt-14">
+        <Text className="text-2xl font-bold text-gray-800">Jadwal Kegiatan PKK</Text>
         <TouchableOpacity className="px-4 py-2 bg-pink-500 rounded-full" onPress={() => router.push('/(untab)/addEvent')}>
           <Text className="font-semibold text-white">+ Tambah</Text>
         </TouchableOpacity>
