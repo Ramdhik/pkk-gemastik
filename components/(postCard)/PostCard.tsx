@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'; // pastikan path ini sesuai
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ProfileHeader from './ProfileHeader';
 
@@ -25,12 +25,12 @@ const PostCard = ({ id, user_id, content, image, created_at, full_name, avatar_u
   const shouldShowSeeMore = content.length > MAX_CONTENT_LENGTH;
   const displayContent = showFullContent || !shouldShowSeeMore ? content : content.substring(0, MAX_CONTENT_LENGTH) + '...';
 
-  // Fetch komentar sesuai post_id
-  const fetchComments = async () => {
+  // Fetch komentar sesuai post_id dengan useCallback
+  const fetchComments = useCallback(async () => {
     const { data, error } = await supabase.from('comments').select(`id, content, created_at, profiles(full_name, avatar_url)`).eq('post_id', id).order('created_at', { ascending: false });
 
     if (!error) setComments(data || []);
-  };
+  }, [id]);
 
   // Submit komentar
   const handleSubmitComment = async () => {
@@ -52,7 +52,7 @@ const PostCard = ({ id, user_id, content, image, created_at, full_name, avatar_u
     if (isModalVisible) {
       fetchComments();
     }
-  }, [isModalVisible]);
+  }, [isModalVisible, fetchComments]);
 
   return (
     <View className="p-4 mb-4 bg-white rounded-lg shadow-md">
