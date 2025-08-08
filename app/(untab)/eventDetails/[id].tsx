@@ -12,10 +12,18 @@ interface Event {
   description?: string;
 }
 
+interface AttendanceData {
+  user_id: string;
+  profiles: {
+    full_name: string;
+  };
+}
+
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [event, setEvent] = useState<Event | null>(null);
+  const [attendees, setAttendees] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,14 +36,25 @@ export default function EventDetailsScreen() {
       }
 
       try {
-        const { data, error: fetchError } = await supabase.from('events').select('*').eq('id', id).single();
+        // Ambil detail event
+        const { data: eventData, error: fetchError } = await supabase.from('events').select('*').eq('id', id).single();
 
-        if (fetchError) {
+        if (fetchError || !eventData) {
           setError('Gagal memuat data event');
-        } else if (!data) {
-          setError('Event tidak ditemukan');
-        } else {
-          setEvent(data);
+          setLoading(false);
+          return;
+        }
+
+        setEvent(eventData);
+
+        // Ambil daftar peserta
+        const { data: attendanceData, error: attendanceError } = (await supabase.from('event_attendance').select('user_id, profiles(full_name)').eq('event_id', id)) as { data: AttendanceData[] | null; error: any };
+
+        if (attendanceError) {
+          console.error('Gagal mengambil data peserta:', attendanceError);
+        } else if (attendanceData) {
+          const names = attendanceData.map((a) => a.profiles?.full_name).filter((name): name is string => Boolean(name)); // Type guard untuk memastikan string
+          setAttendees(names);
         }
       } catch (err) {
         console.error('Unexpected error:', err);
@@ -105,6 +124,17 @@ export default function EventDetailsScreen() {
             <View className="mb-4">
               <Text className="mb-1 text-sm font-semibold text-gray-600">Deskripsi</Text>
               <Text className="leading-6 text-gray-800">{event.description}</Text>
+            </View>
+          )}
+
+          {attendees.length > 0 && (
+            <View className="mt-6">
+              <Text className="mb-1 text-sm font-semibold text-gray-600">Peserta yang Hadir</Text>
+              {attendees.map((name, index) => (
+                <Text key={index} className="text-gray-800">
+                  • {name}
+                </Text>
+              ))}
             </View>
           )}
         </View>

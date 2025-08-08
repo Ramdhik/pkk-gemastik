@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 interface Product {
@@ -22,13 +22,9 @@ export default function ProductDetailsScreen() {
 
   const router = useRouter();
 
-  useEffect(() => {
-    if (id) {
-      fetchProduct();
-    }
-  }, [id]);
+  const fetchProduct = useCallback(async () => {
+    if (!id) return;
 
-  const fetchProduct = async () => {
     const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
 
     if (error) {
@@ -37,7 +33,13 @@ export default function ProductDetailsScreen() {
       setProduct(data as Product);
     }
     setLoading(false);
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchProduct();
+    }
+  }, [id, fetchProduct]);
 
   const handleBuy = async () => {
     const {

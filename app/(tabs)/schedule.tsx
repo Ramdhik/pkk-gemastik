@@ -13,57 +13,25 @@ interface Event {
 interface AttendanceMap {
   [eventId: string]: {
     isAnswered: boolean;
-    isAttending?: boolean;
   };
 }
 
-function EventCard({
-  id,
-  date,
-  title,
-  place,
-  isAnswered,
-  isAttending,
-  onPress,
-}: {
-  id: string;
-  date: string;
-  title: string;
-  place: string | null;
-  isAnswered: boolean;
-  isAttending?: boolean;
-  onPress: (eventId: string, attend: boolean) => void;
-}) {
+function EventCard({ id, date, title, place, isAnswered, onPress }: { id: string; date: string; title: string; place: string | null; isAnswered: boolean; onPress: (eventId: string) => void }) {
   const router = useRouter();
+
   return (
-    <View className="p-4 bg-white shadow mb-30 rounded-xl">
+    <View className="p-4 mb-6 bg-white shadow rounded-xl">
       <Text className="text-sm text-gray-400">{date}</Text>
-      <Text className="mb-1 text-lg font-semibold">{title}</Text>
+      <Text className="mb-1 text-lg font-semibold text-black">{title}</Text>
       {place && <Text className="mb-3 text-sm text-gray-600">{place}</Text>}
 
       <View className="flex-row space-x-2">
-        <TouchableOpacity
-          disabled={isAnswered}
-          onPress={() => onPress(id, true)}
-          className={`flex-1 py-2 rounded-full items-center 
-            ${isAnswered ? 'bg-pink-500' : 'bg-gray-200'}`}
-        >
-          <Text
-            className={`font-semibold 
-              ${isAnswered ? 'text-white' : 'text-gray-400'}`}
-          >
-            {isAnswered ? 'Sudah Hadir' : 'Hadir'}
-          </Text>
+        <TouchableOpacity disabled={isAnswered} onPress={() => onPress(id)} className={`flex-1 py-2 rounded-full items-center ${isAnswered ? 'bg-pink-500' : 'bg-gray-200'}`}>
+          <Text className={`font-semibold ${isAnswered ? 'text-white' : 'text-gray-600'}`}>{isAnswered ? 'Sudah Hadir' : 'Hadir'}</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        onPress={() => {
-          console.log('Navigating to event ID:', id);
-          // Ubah path ini sesuai struktur folder Anda
-          router.push(`../(untab)/eventDetails/${id}`);
-        }}
-      >
+      <TouchableOpacity onPress={() => router.push(`../(untab)/eventDetails/${id}`)}>
         <Text className="mt-2 text-xs text-gray-400 underline">Lihat Selengkapnya</Text>
       </TouchableOpacity>
     </View>
@@ -81,22 +49,34 @@ export default function ScheduleScreen() {
       const session = (await supabase.auth.getSession()).data.session;
       const user = session?.user;
 
-      if (!user) return;
+      if (!user) {
+        console.log('User tidak ditemukan');
+        return;
+      }
 
       setUserId(user.id);
 
-      const { data: eventsData } = await supabase.from('events').select('id, title, event_date, place').order('event_date', { ascending: true });
+      // Ambil daftar events
+      const { data: eventsData, error: eventsErr } = await supabase.from('events').select('id, title, event_date, place').order('event_date', { ascending: true });
+
+      if (eventsErr) {
+        console.error('Gagal ambil event:', eventsErr);
+        return;
+      }
 
       setEvents(eventsData || []);
 
-      const { data: attendanceData } = await supabase.from('event_attendance').select('event_id, is_attending').eq('user_id', user.id);
+      // Ambil kehadiran
+      const { data: attendanceData, error: attendanceErr } = await supabase.from('event_attendance').select('event_id').eq('user_id', user.id);
+
+      if (attendanceErr) {
+        console.error('Gagal ambil attendance:', attendanceErr);
+        return;
+      }
 
       const attendanceMap: AttendanceMap = {};
       (attendanceData || []).forEach((a) => {
-        attendanceMap[a.event_id] = {
-          isAnswered: true,
-          isAttending: a.is_attending,
-        };
+        attendanceMap[a.event_id] = { isAnswered: true };
       });
 
       setAttendance(attendanceMap);
@@ -125,36 +105,58 @@ export default function ScheduleScreen() {
     };
   }, []);
 
-  const handleAttendance = async (eventId: string, isAttending: boolean) => {
-    if (!userId) return;
-    console.log('Tombol Hadir diklik:', { eventId, isAttending });
+  const handleAttendance = async (eventId: string) => {
+    if (!userId) {
+      console.log('User ID tidak tersedia');
+      return;
+    }
+
     Alert.alert('Konfirmasi Kehadiran', 'Apakah kamu yakin ingin hadir dalam acara ini?', [
       {
         text: 'Batal',
         style: 'cancel',
+        onPress: () => console.log('User batal hadir'),
       },
       {
         text: 'Ya, Saya Hadir',
         onPress: async () => {
-          const existing = await supabase.from('event_attendance').select('*').eq('event_id', eventId).eq('user_id', userId).maybeSingle();
+          try {
+            // Cek apakah sudah pernah hadir
+            const { data: existing, error: selectError } = await supabase.from('event_attendance').select('*').eq('event_id', eventId).eq('user_id', userId).maybeSingle();
 
-          if (existing.data) {
-            await supabase.from('event_attendance').update({ is_attending: isAttending }).eq('id', existing.data.id);
-          } else {
-            await supabase.from('event_attendance').insert({
+            if (selectError) {
+              console.error('Gagal select:', selectError);
+              return;
+            }
+
+            if (existing) {
+              console.log('Sudah pernah hadir sebelumnya');
+              return;
+            }
+
+            // Insert kehadiran
+            const { error: insertError } = await supabase.from('event_attendance').insert({
               event_id: eventId,
               user_id: userId,
-              is_attending: isAttending,
             });
-          }
 
-          setAttendance((prev) => ({
-            ...prev,
-            [eventId]: {
-              isAnswered: true,
-              isAttending,
-            },
-          }));
+            if (insertError) {
+              console.error('Gagal insert kehadiran:', insertError);
+              return;
+            }
+
+            // Update state
+            setAttendance((prev) => ({
+              ...prev,
+              [eventId]: {
+                isAnswered: true,
+              },
+            }));
+
+            console.log('Berhasil insert kehadiran');
+          } catch (err) {
+            console.error('Error di handleAttendance:', err);
+          }
         },
       },
     ]);
@@ -162,7 +164,6 @@ export default function ScheduleScreen() {
 
   return (
     <SafeAreaView className="flex-1 mt-10 bg-gray-50">
-      {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <Text className="text-3xl font-bold text-gray-800">Jadwal Kegiatan PKK</Text>
         <TouchableOpacity className="px-4 py-2 bg-pink-500 rounded-full" onPress={() => router.push('/(untab)/addEvent')}>
@@ -170,7 +171,6 @@ export default function ScheduleScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ScrollView */}
       <ScrollView className="p-4 pt-0">
         {events.map((event) => (
           <EventCard
@@ -184,7 +184,6 @@ export default function ScheduleScreen() {
             title={event.title}
             place={event.place}
             isAnswered={attendance[event.id]?.isAnswered ?? false}
-            isAttending={attendance[event.id]?.isAttending}
             onPress={handleAttendance}
           />
         ))}

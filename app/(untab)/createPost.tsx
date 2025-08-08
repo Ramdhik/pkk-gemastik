@@ -26,6 +26,7 @@ export default function UploadImageScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
+        aspect: [4, 3], // Aspect ratio 4:3 untuk cropping
         quality: 0.8,
       });
 
