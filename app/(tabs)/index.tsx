@@ -126,6 +126,7 @@ export default function TabTwoScreen() {
       </View>
 
       <FlatList
+        className="mb-20"
         data={posts}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <PostCard id={item.id} user_id={item.user_id} content={item.content} avatar_url={item.avatar_url} image={item.image} created_at={item.created_at} full_name={item.full_name} />}
