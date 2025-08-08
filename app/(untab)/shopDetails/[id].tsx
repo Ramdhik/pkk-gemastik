@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { Ionicons } from '@expo/vector-icons'; // Ganti dari lucide-react-native ke Ionicons
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -18,6 +18,8 @@ export default function ProductDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -37,9 +39,56 @@ export default function ProductDetailsScreen() {
     setLoading(false);
   };
 
-  const handleBuy = () => {
-    if (product) {
-      Alert.alert('Berhasil', `Kamu telah membeli ${product.title}`);
+  const handleBuy = async () => {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      Alert.alert('Error', 'Gagal mendapatkan informasi pengguna.');
+      return;
+    }
+
+    const userId = user.id;
+
+    if (!product) return;
+
+    // Cek apakah produk sudah ada di keranjang
+    const { data: existingCartItem, error: fetchError } = await supabase.from('cart_items').select('*').eq('user_id', userId).eq('product_id', product.id).single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // Error selain tidak ditemukan
+      Alert.alert('Error', fetchError.message);
+      return;
+    }
+
+    if (existingCartItem) {
+      // Produk sudah ada → tambahkan jumlahnya
+      const newQuantity = existingCartItem.quantity + quantity;
+
+      const { error: updateError } = await supabase.from('cart_items').update({ quantity: newQuantity }).eq('id', existingCartItem.id);
+
+      if (updateError) {
+        Alert.alert('Error', updateError.message);
+      } else {
+        Alert.alert('Berhasil', `${product.title} ditambahkan ke keranjang (${quantity} ditambahkan, total ${newQuantity}).`);
+      }
+    } else {
+      // Produk belum ada → masukkan baru
+      const { error: insertError } = await supabase.from('cart_items').insert([
+        {
+          user_id: userId,
+          product_id: product.id,
+          quantity: quantity,
+        },
+      ]);
+
+      if (insertError) {
+        Alert.alert('Error', insertError.message);
+      } else {
+        Alert.alert('Berhasil', `${product.title} berhasil ditambahkan ke keranjang (jumlah: ${quantity}).`);
+      }
     }
   };
 
@@ -82,6 +131,22 @@ export default function ProductDetailsScreen() {
 
       {/* Deskripsi */}
       {product.description ? <Text className="mb-8 text-base leading-relaxed text-gray-800">{product.description}</Text> : <Text className="mb-8 text-base italic text-gray-500">Tidak ada deskripsi untuk produk ini.</Text>}
+
+      {/* Quantity */}
+      <View className="flex-row items-center justify-between px-4 py-3 mb-6 bg-gray-100 rounded-xl">
+        <Text className="text-base font-medium text-gray-800">Jumlah:</Text>
+        <View className="flex-row items-center gap-x-3">
+          <TouchableOpacity onPress={() => setQuantity((prev) => Math.max(1, prev - 1))} className="px-3 py-1 bg-pink-600 rounded-full">
+            <Text className="text-lg font-bold text-white">−</Text>
+          </TouchableOpacity>
+
+          <Text className="text-base font-bold text-gray-900">{quantity}</Text>
+
+          <TouchableOpacity onPress={() => setQuantity((prev) => prev + 1)} className="px-3 py-1 bg-pink-600 rounded-full">
+            <Text className="text-lg font-bold text-white">＋</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Tombol Beli */}
       <TouchableOpacity onPress={handleBuy} className="items-center justify-center py-4 mb-10 bg-pink-600 rounded-full shadow-md" activeOpacity={0.9}>

@@ -36,7 +36,7 @@ function EventCard({
 }) {
   const router = useRouter();
   return (
-    <View className="p-4 mb-4 bg-white shadow rounded-xl">
+    <View className="p-4 bg-white shadow mb-30 rounded-xl">
       <Text className="text-sm text-gray-400">{date}</Text>
       <Text className="mb-1 text-lg font-semibold">{title}</Text>
       {place && <Text className="mb-3 text-sm text-gray-600">{place}</Text>}

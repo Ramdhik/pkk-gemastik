@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
@@ -11,7 +10,6 @@ export default function Account() {
   const [role, setRole] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [desaAsal, setDesaAsal] = useState('');
-  const router = useRouter();
 
   useEffect(() => {
     getProfile();
