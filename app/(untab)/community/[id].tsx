@@ -85,17 +85,17 @@ export default function GroupDetail() {
     const time = dayjs(item.created_at).format('HH.mm');
 
     return (
-      <View className={`mb-3 ${isMe ? 'items-end' : 'items-start'}`}>
+      <View className={`mb-4 ${isMe ? 'items-end' : 'items-start'}`}>
         {!isMe && (
-          <View className="flex-row items-center mb-1">
-            <Image source={{ uri: sender?.avatar_url || 'https://ui-avatars.com/api/?name=User' }} className="w-8 h-8 mr-2 rounded-full" />
-            <Text className="text-xs font-bold text-pink-600">{sender?.full_name || 'User'}</Text>
+          <View className="flex-row items-center mb-2">
+            <Image source={{ uri: sender?.avatar_url || 'https://ui-avatars.com/api/?name=User' }} className="mr-2 rounded-full w-9 h-9" />
+            <Text className="text-base font-semibold text-pink-600">{sender?.full_name || 'User'}</Text>
           </View>
         )}
-        <View className={`max-w-[80%] px-4 py-2 rounded-lg ${isMe ? 'bg-pink-200' : 'bg-gray-100'}`}>
-          <Text className="text-sm text-black">{item.content}</Text>
+        <View className={`max-w-[85%] px-5 py-3 rounded-2xl ${isMe ? 'bg-pink-200' : 'bg-gray-100'}`}>
+          <Text className="text-lg leading-relaxed text-black">{item.content}</Text>
         </View>
-        <Text className="text-[10px] text-gray-400 mt-1">{time}</Text>
+        <Text className="mt-1 text-xs text-gray-500">{time}</Text>
       </View>
     );
   };
@@ -115,9 +115,9 @@ export default function GroupDetail() {
 
       {/* Input pesan */}
       <View className="flex-row items-center p-4 bg-white border-t border-gray-200">
-        <TextInput placeholder="Tulis pesan..." className="flex-1 px-4 py-2 text-base text-gray-800 bg-pink-100 rounded-full" value={newMessage} onChangeText={setNewMessage} />
-        <TouchableOpacity onPress={sendMessage} className="items-center justify-center w-10 h-10 ml-2 bg-pink-500 rounded-full">
-          <Text className="text-xl text-white">➤</Text>
+        <TextInput placeholder="Tulis pesan..." className="flex-1 px-5 py-3 text-base text-gray-800 bg-pink-100 rounded-full" value={newMessage} onChangeText={setNewMessage} />
+        <TouchableOpacity onPress={sendMessage} className="items-center justify-center w-12 h-12 ml-2 bg-pink-500 rounded-full">
+          <Text className="text-2xl text-white">➤</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

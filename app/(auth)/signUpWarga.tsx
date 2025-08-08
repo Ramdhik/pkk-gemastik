@@ -57,6 +57,7 @@ export default function SignUpWarga() {
           id: user.id,
           full_name: fullName,
           birth_date: birthDate,
+          avatar_url: 'https://i.pinimg.com/736x/9e/83/75/9e837528f01cf3f42119c5aeeed1b336.jpg',
           role: 'warga',
         },
       ]);
