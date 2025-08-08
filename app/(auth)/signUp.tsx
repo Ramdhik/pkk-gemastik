@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SignUpRole() {
   const [role, setRole] = useState<'warga' | 'pkk' | null>(null);
@@ -18,11 +18,22 @@ export default function SignUpRole() {
 
   return (
     <View className="justify-center flex-1 px-6 bg-white">
-      {/* Title */}
-      <Text className="text-3xl font-bold text-center text-[#521B41] mb-10">Ayo Daftar Sekarang</Text>
+      <View
+        style={{
+          position: 'absolute',
+          marginTop: 34,
+          top: 60,
+          left: 0,
+          right: 0,
+          alignItems: 'center',
+          zIndex: 10, // pastikan di atas
+        }}
+      >
+        <Image source={require('../../assets/images/logo.png')} style={{ width: 400, height: 300, resizeMode: 'contain' }} />
+      </View>
 
       {/* Subheading */}
-      <Text className="text-lg font-semibold text-[#521B41] mb-6">Apa Peran Kamu?</Text>
+      <Text className="text-lg font-semibold text-[#521B41] mb-6 mt-32">Apa Peran Kamu?</Text>
 
       {/* Option - Masyarakat */}
       <TouchableOpacity className="flex-row items-center mb-5" onPress={() => setRole('warga')}>

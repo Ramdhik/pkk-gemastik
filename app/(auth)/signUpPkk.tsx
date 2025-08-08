@@ -64,7 +64,7 @@ export default function SignUpPkk() {
 
   return (
     <View className="flex-1 px-6 pt-16 bg-white">
-      <Text className="mb-10 text-3xl font-bold text-center text-pink-700">Ayo Daftar Sekarang</Text>
+      <Text className="mt-10 mb-10 text-3xl font-bold text-center text-pink-700">Ayo Daftar Sekarang</Text>
 
       <Text className="mb-2 text-base font-semibold text-pink-800">Nama Lengkap</Text>
       <View className="flex-row items-center px-4 mb-4 bg-pink-100 rounded-full h-14">
