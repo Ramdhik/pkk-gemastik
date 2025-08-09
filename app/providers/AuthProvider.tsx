@@ -133,23 +133,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  // Global error handler for auth errors
-  useEffect(() => {
-    const handleGlobalError = (error: any) => {
-      if (error.message?.includes('Auth session missing') || error.name === 'AuthSessionMissingError') {
-        console.log('🚨 Global auth error detected, clearing session...');
-        clearAuthData();
-      }
-    };
-
-    // You can add global error listeners here if needed
-    // For example, if you're using a global error handler
-
-    return () => {
-      // Cleanup
-    };
-  }, []);
-
   return (
     <AuthContext.Provider
       value={{

@@ -7,11 +7,14 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
-import AuthProvider, { useAuth } from './providers/AuthProvider';
+import { AuthProvider, useAuth } from './providers/AuthProvider';
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { session, isLoading, hasAuthError } = useAuth();
+
+  // Jika ada auth error atau tidak ada session, arahkan ke (auth)
+  const shouldShowAuth = !session || hasAuthError;
 
   // Debug logging
   useEffect(() => {
@@ -20,15 +23,12 @@ function RootLayoutNav() {
     console.log('  - Loading:', isLoading);
     console.log('  - Has Error:', hasAuthError);
     console.log('  - Should Show Auth:', shouldShowAuth);
-  }, [session, isLoading, hasAuthError]);
+  }, [session, isLoading, hasAuthError, shouldShowAuth]);
 
   if (isLoading) {
     console.log('⏳ RootLayoutNav - Still loading...');
     return null; // Atau tambahkan loading screen custom
   }
-
-  // Jika ada auth error atau tidak ada session, arahkan ke (auth)
-  const shouldShowAuth = !session || hasAuthError;
 
   console.log('🚀 RootLayoutNav - Navigating to:', shouldShowAuth ? '(auth)' : '(tabs)');
 

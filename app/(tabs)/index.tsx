@@ -179,7 +179,7 @@ export default function TabTwoScreen() {
       cleanup?.then((cleanupFn) => cleanupFn?.());
       subscription.unsubscribe();
     };
-  }, []);
+  }, [router]); // Added router to dependency array
 
   const firstName = fullName?.split?.(' ')[0] || '';
 
